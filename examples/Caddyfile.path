@@ -1,0 +1,4 @@
+# Path mode: https://{$DOMAIN}/admin and https://{$DOMAIN}/c/<channel>/<name>
+{$DOMAIN} {
+	reverse_proxy lineroulette:8080
+}

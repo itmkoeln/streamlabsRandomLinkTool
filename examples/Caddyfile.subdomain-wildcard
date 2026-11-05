@@ -1,0 +1,10 @@
+# Subdomain mode with ONE wildcard certificate (DNS-01 challenge).
+# Needs a Caddy build with your DNS provider plugin, e.g. built with xcaddy:
+#   xcaddy build --with github.com/caddy-dns/cloudflare
+# (other providers: https://github.com/caddy-dns). Requires BASE_DOMAIN={$DOMAIN} for LineRoulette.
+{$DOMAIN}, *.{$DOMAIN} {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	}
+	reverse_proxy lineroulette:8080
+}

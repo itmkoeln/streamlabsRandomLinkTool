@@ -1,0 +1,56 @@
+# LineRoulette + Caddy (automatic HTTPS). Not published on a host port: only Caddy is exposed.
+#
+#   1. cp .env.example .env   and set ADMIN_PASSWORD and DOMAIN (the public host name, e.g. hub.example.com)
+#   2. choose a Caddyfile via CADDYFILE in .env (default: path mode, no subdomains):
+#        ./examples/Caddyfile.path                  path mode:  https://DOMAIN/c/<channel>/<name>
+#        ./examples/Caddyfile.subdomain-ondemand    subdomains: https://<channel>.DOMAIN/<name>  (certificate per channel, no DNS API needed)
+#        ./examples/Caddyfile.subdomain-wildcard    subdomains with ONE wildcard certificate (needs a Caddy build with your DNS provider plugin)
+#      for the two subdomain variants also set BASE_DOMAIN=<same value as DOMAIN> in .env
+#   3. docker compose -f docker-compose.caddy.yml up -d --build
+services:
+  lineroulette:
+    build: .
+    image: lineroulette:latest
+    container_name: lineroulette
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env (min. 10 characters)}
+      ADMIN_RESET: ${ADMIN_RESET:-0}
+      BASE_DOMAIN: ${BASE_DOMAIN:-}
+      ADMIN_HOST: ${ADMIN_HOST:-}
+      PUBLIC_SCHEME: https
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      TRUST_PROXY: "1"
+      SESSION_HOURS: ${SESSION_HOURS:-12}
+      DEFAULT_LANG: ${DEFAULT_LANG:-en}
+      CONTENT_LANG: ${CONTENT_LANG:-}
+      DATE_FORMAT: ${DATE_FORMAT:-%Y-%m-%d}
+      TIME_FORMAT: ${TIME_FORMAT:-%H:%M}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - lineroulette-data:/data
+
+  caddy:
+    image: caddy:2
+    container_name: lineroulette-caddy
+    restart: unless-stopped
+    depends_on:
+      - lineroulette
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env (public host name, e.g. hub.example.com)}
+    volumes:
+      - ${CADDYFILE:-./examples/Caddyfile.path}:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  lineroulette-data:
+  caddy-data:
+  caddy-config:
